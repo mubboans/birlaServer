@@ -8,7 +8,7 @@ app.get('/data', (req, res) => {
 })
 
 app.use(express.json());
-app.use('',userroute)
+app.use('',userroute) 
 app.listen(port,async () => {
   try {
     // console.log(sequelize);
