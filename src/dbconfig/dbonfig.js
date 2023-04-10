@@ -1,50 +1,9 @@
 const Sequelize = require('sequelize').Sequelize;
-// MUBASHIR
-// const d = new Sequelize()
-// const sequelize = new Sequelize(
-//     'testDatabase', null, null, {
-//         dialect: 'mssql',
-//         dialectOptions: {
-//             connectionString: '.;Database=testDatabase;Trusted_Connection=True;',
-//           authentication: {
-//             type: 'ntlm',
-//             options: {
-//               domain: 'MUBASHIR',
-//             }
-//           },
-//           options: {
-//             instanceName: 'SQLEXPRESS'
-//           }
-//         }
-//     // dialect: 'mssql',
-//     // host: 'localhost',
-//     // dialectModulePath:require.resolve('sequelize-msnodesqlv8'),
-//     // dialectOptions: {
-//     //     connectionString: .;Database=master;Trusted_Connection=True;',
-//         // authentication: {
-//         //     type: 'ntlm',
-//         //     options: {
-//         //         domain: 'MUBASHIR',
-//         //       },
-//             // type: 'default',
-//         // }, 
-//         // trustedConnection: true,
-//     //     options: { 
-//     //       encrypt: true,
-//     //       trustServerCertificate: true,
-//     //       instanceName: 'MSSQLSERVER',
-//     //       validateBulkLoadParameters: true,
-//     //       integratedSecurity: true,
-//     //     },
-//     //   },
-  
-// });
-// { host: 'localhost', dialect: 'mssql',  }
+const {hostname,dbusername,dbpassword,dbname } = require('../config/config')
 function connectDB(){
-  const sequelize = new Sequelize('nodelearn', 'nodelearn', '50x8?6Hix', { 
+  const sequelize = new Sequelize( dbname , dbusername, dbpassword, { 
     dialect: 'mssql',
-    host: 'SG2NWPLS19SQL-v04.mssql.shr.prod.sin2.secureserver.net',
-  // dialectOptions: { instanceName: 'MSSQLSERVER' }
+    host: hostname,
  }
     )
     sequelize.authenticate().then(() => {
