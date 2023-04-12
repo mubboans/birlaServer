@@ -7,14 +7,14 @@ const connectDB = require('./dbconfig/dbonfig')
 const {port}  = require('./config/config')
 
 const apiErrorHandler = require('./error/api-error-handler')
-const userroute = require('./routes/user_route')
+
 const itemroute = require('./routes/invoice_item_route')
 app.get('/data', (req, res) => {
   res.send('Hello World!')
 })
 app.use(express.json());
 app.use('/invoice',itemroute);
-app.use('',userroute) 
+
 app.use('/users', require('./routes/users'));
 app.use(apiErrorHandler);
 app.use('**/**',function(req, res, next) {

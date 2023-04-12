@@ -1,56 +1,31 @@
 const Sequelize = require('sequelize').Sequelize;
 const {hostname,dbusername,dbpassword,dbname } = require('../config/config')
+const sequelize = new Sequelize( dbname , dbusername, dbpassword, { 
+  dialect: 'mssql',
+  host: hostname,
+}
+  )
 function connectDB(){
-  const sequelize = new Sequelize( dbname , dbusername, dbpassword, { 
-    dialect: 'mssql',
-    host: hostname,
- }
-    )
     sequelize.authenticate().then(() => {
       console.log('Connection has been established successfully.');
     }).catch((error) => {
       console.error('Unable to connect to the database: ', error);
     });
 }
-// const sequelize = new Sequelize('myDatabase', 'sa', '123', { 
-//   dialect: 'mysql', 
-//   // dialectOptions: {
-//   //   authentication: {
-//   //     type: 'ntlm',
-//   //     options: {
-//   //       domain: 'MUBASHIR',
-//   //     }
-//   //   },
-//   //   options: {
-//   //     instanceName: 'MUBASHIR'
-//   //   }
-//   // }
-//   host: 'localhost', port: '1433',
-//   dialectOptions: { instanceName: 'MSSQLSERVER' }
-//   // dialectOptions: {
-//   //   authentication: {
-//   //     type: 'ntlm',
-//   //     options: {
-//   //       domain: 'Mubashir',
-//   //       userName: 'mubashir',
-//   //       password: '1234'
-//   //     }
-//   //   },
-//   //   options: {
-//   //     instanceName: 'MSSQLSERVER'
-//   //   }
-//   // }
+function checkTable (){
+  sequelize.query("SELECT * FROM invoiceItems", { type: Sequelize.QueryTypes.SELECT })
+  .then(results => {
+    if (results.length > 0) {
+      console.log('Table exists in the database.',results);
+    } else {
+      console.log('Table does not exist in the database.');
+    }
+  })
+  .catch(error => {
+    console.error('Error checking for table existence:', error);
+  });
+}
 
-// })
-//   sequelize.authenticate().then(x=>{
-//     console.log('Connection has been established successfully.');
-//   }).catch(x=>{
-//     console.error('Unable to connect to the database:', error);
-//   });
+// checkTable ();
 
   module.exports=connectDB;
-//   try {
-//     await sequelize.authenticate();
-    
-//   } catch (error) {
-//   }
