@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express')
+const bodyParser = require('body-parser');
 const app = express()
 const path =require('path')
 const connectDB = require('./dbconfig/dbonfig')
@@ -14,6 +15,7 @@ app.get('/data', (req, res) => {
 app.use(express.json());
 app.use('/invoice',itemroute);
 app.use('',userroute) 
+app.use('/users', require('./routes/users'));
 app.use(apiErrorHandler);
 app.use('**/**',function(req, res, next) {
 
@@ -21,6 +23,17 @@ app.use('**/**',function(req, res, next) {
   res.sendFile(path.join(__dirname, './public/404-not-found.html'))
 }
 );
+
+
+
+
+app.get('/data', (req, res) => {
+  res.send('Hello World!')
+})
+
+
+
+// app.use(express.urlencoded({extended: false}))
 
 app.listen(port,async () => {
   try {
