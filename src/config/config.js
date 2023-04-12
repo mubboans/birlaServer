@@ -3,4 +3,5 @@ module.exports = Object.assign({},{
     dbusername:process.env.DBNAME || "nodelearn",
     dbpassword:process.env.DBPASSWORD || "50x8?6Hix",  
     dbname: process.env.DBNAME || "nodelearn",
+    port : process.env.PORT || 8000,
 })
