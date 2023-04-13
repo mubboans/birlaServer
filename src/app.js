@@ -4,19 +4,22 @@ const bodyParser = require('body-parser');
 const app = express()
 const path =require('path')
 const connectDB = require('./dbconfig/dbonfig')
+const invoiceroute = require ('./routes/invoice_route')
 const {port}  = require('./config/config')
 
 const apiErrorHandler = require('./error/api-error-handler')
 
-const itemroute = require('./routes/invoice_item_route')
+const itemroute = require('./routes/item_Detail_route')
 app.get('/data', (req, res) => {
   res.send('Hello World!')
 })
 app.use(express.json());
 app.use('/invoice',itemroute);
-
+app.use('',invoiceroute)
 app.use('/users', require('./routes/users'));
 app.use(apiErrorHandler);
+
+
 app.use('**/**',function(req, res, next) {
 
   res.status(404);

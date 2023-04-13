@@ -9,15 +9,19 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER
       },
+      invoice_no:{
+        type: Sequelize.DataTypes.INTEGER,
+        unique:true,
+       
+      },
       customer_id: {
         type: Sequelize.DataTypes.INTEGER,
         references: {
           model: 'Users',
-
           key: 'id'
       }},
     cf_link_id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
         allowNull: false
       },
       link_id: {
@@ -32,7 +36,6 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false
       },
-
       link_amount: {
         type: Sequelize.INTEGER,
         allowNull: false
