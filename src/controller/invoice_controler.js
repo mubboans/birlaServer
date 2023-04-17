@@ -9,8 +9,8 @@ const { User,orderDetail,invoiceItems } = require('../migration/models');
 const { Op } = require('sequelize');
 const sdk = require('api')('@cashfreedocs-new/v3#246q2ilfwcazf0');
 const axios = require('axios');
-
-
+const fs = require('fs');
+const pdf = require ('html-pdf')
 const createPdf = ()=>{
 
 }
@@ -219,23 +219,24 @@ console.log(id,invyno,data);
     let invoice =await invoiceModel.update(updateItem,{where:{id:id}})
     console.log(invoice);
     if(invoice[0] == 1){
-        let invoiceUpdate;
         let items = data.item;
         let invoiceDelete =await invoiceItems.destroy({where:{invoice_id:id}})
         
         console.log(invoiceDelete,'data deleted',items);
+        let invoice_id = id
         // for(let i=0;i<items.length;i++){
-            let updateItem = data.item.map((item)=>({id,...item}))
+            let updateItem = data.item.map((item)=>({invoice_id,...item}))
             // {
             //     item_id:items[i].item_id,
             //     quantity:quantity[i]
             // }
+            console.log(updateItem,'posting data');
            await invoiceItems.bulkCreate(updateItem).then((item)=>{
-            console.log('inserted succ');
+            console.log('inserted succ',item);
            }).catch((err)=>{
             console.log('error',err);
            })
-            console.log(invoiceUpdate,'updatesd Item');
+            console.log('updatesd Item');
             
         // }
         // invoiceItems.bulkCreate(items,{updateOnDuplicate:['item_id','quantity']}).then((data)=>{
@@ -254,7 +255,16 @@ console.log(id,invyno,data);
 
 })
 
-
+const deleteInvoice = async(req,res,next)=>{
+const id =req.params.ids
+let isInvoiceDeleted = await invoiceModel.destroy({where:{id:id}})
+if(isInvoiceDeleted == 1){
+    res.status(200).send({message:"Succesfully Deleted invoice",success:true,status:"Success"})
+}
+else{
+    next(apiError.BadRequest("Can't Delete Invoice"))
+}
+}
 const getAllInvoice = asyncHandler(async (req, res, next) => {
     let invoice = await invoiceModel.findAll({include: [
         {
@@ -267,7 +277,7 @@ const getAllInvoice = asyncHandler(async (req, res, next) => {
         },{
             model:invoiceItems
         }
-      ]});
+      ],order: [['createdAt', 'DESC']]});
     if (invoice) {
         res.status(200).send({ invoice })
     }
@@ -276,7 +286,24 @@ const getAllInvoice = asyncHandler(async (req, res, next) => {
     }
 }
 )
+const bulkdeleteInvoice =async(req,res,next)=>{
+    let ids = req.body.ids;
+  try{
+
+      let bulinvoicedeleted = await invoiceModel.destroy({where:{ id: { [Op.in]: ids }}})
+      console.log(bulinvoicedeleted);
+      if(bulinvoicedeleted && bulinvoicedeleted != 0){
+          res.status(200).send({message:"Succesfully deleted selected invoice",success:true,status:"Success"})
+      }
+      else{
+        next(apiError.NotFound("cant found invoice number"))
+      }
+  }
+  catch(err){
+      next(apiError.BadRequest("Can't deleted selected invoice",err))
+  }
+}
 module.exports = {
     createInvoice,
-    getAllInvoice,updateInvoice
+    getAllInvoice,updateInvoice,deleteInvoice,bulkdeleteInvoice
 }

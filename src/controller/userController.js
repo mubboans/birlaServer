@@ -1,15 +1,24 @@
+const apiError = require('../error/apiError');
 const { User } = require('../migration/models');
 
-const getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res,next) => {
     try {
-        const users = await User.findAll(); // use Sequelize to find all users
-        res.json(users); // send the users
+        console.log('get called');
+        const users = await User.findAll({order: [['createdAt', 'DESC']]});
+
+            console.log(users);
+        if(users){
+            res.status(200).send({message:"Customer created succesfully",success:true,status:"Success",data:users})
+        }
+
       } 
-      catch(e) {console.log(e);}
+      catch(e) {
+        next(apiError.NotFound("Can't found anything on server",e))
+      }
 
 }
 
-const createUser = async (req, res) => {
+const createUser = async (req, res,next) => {
     try {
         const user = await User.create({
             firstName: req.body.firstName,
@@ -23,14 +32,18 @@ const createUser = async (req, res) => {
             state: req.body.state,
             country: req.body.country,
         })
-
-        res.json(user);
+        if(user){
+            res.status(200).send({message:"Customer created succesfully",success:true,status:"Success"})
+        }
+        // console.log(user);
     } catch (e) {
-        console.log(e);
+        next(apiError.BadRequest("Can't create customer",e))
     }
 }
 
-const updateUser = async (req, res) => {
+const updateUser = async (req, res,next) => {
+    let id = req.params.id;
+    console.log(id,'update');
     try {
         const user = await User.update({
             firstName: req.body.firstName,
@@ -45,13 +58,16 @@ const updateUser = async (req, res) => {
             country: req.body.country,
         }, {
             where: {
-               id: req.body.id 
+               id: id 
             }
         })
-
-        res.json(user);
+        if(user){
+            res.status(200).send({message:"Customer updated succesfully",success:true,status:"Success"})
+        }
+        
     } catch (e) {
-        console.log(e);
+
+        next(apiError.BadRequest("Can't update customer",e))
     }
 }
 
@@ -69,15 +85,20 @@ const getUserById = async (req, res) => {
     }
 }
 
-const deleteUser = async (req, res) => {
-
-    const user = await User.destroy({
+const deleteUser = async (req, res,next) => {
+    let id = req.params.id
+    const isUserdeleted = await User.destroy({
         where: {
-            id: req.params.id
+            id: id
         }
     })
-
-    res.json(user);
+console.log(isUserdeleted);
+    if(isUserdeleted == 1){
+        res.status(200).send({message:"Customer deleted succesfully",success:true,status:"Success"})
+    }
+    else{
+        next(apiError.BadRequest("Can't delete customer"))
+    }
 }
 
-module.exports = { getAllUsers, createUser, updateUser, getUserById, deleteUser }
+module.exports = { getAllUsers, createUser, updateUser, getUserById, deleteUser}
