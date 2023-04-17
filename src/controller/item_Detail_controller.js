@@ -2,7 +2,7 @@ const { where } = require('sequelize');
 const apiError = require('../error/apiError');
 const asyncHandler = require('../middleware/asyn-await-wrapper');
 // const data = require('../migration/migrations/20230410063224-create-invoice-item')
-const invoiceItem = require('../migration/models/index')['invoiceItem']
+const invoiceItem = require('../migration/models/index')['itemDetail']
 const deleteInvoiceItem =async (req,res,next)=>{
     console.log('delete');
     let id = req.params.ids;
@@ -41,7 +41,7 @@ const updateItembyId =asyncHandler(async(req,res,next)=>{
     let data = req.body
     let updateBody = {
         itemname:data.itemname,
-        price: data.price,
+        itemprice: data.price,
         status:data.status,
         category:data.category
     }
@@ -63,9 +63,9 @@ const updateItembyId =asyncHandler(async(req,res,next)=>{
 const createInvoiceItem =asyncHandler(async (req,res,next)=>{
     let data = req.body;
     console.log(data);
-    let item = await invoiceItem.create({itemname:data.itemname,price:data.price,status:data.status,category:data.category})
+    let item = await invoiceItem.create({itemname:data.itemname,itemprice:data.price,status:data.status,category:data.category})
     if(item){
-        console.log(item,'Item');
+        console.log(item.dataValues,'Item');
         res.status(201).send({message:"Succesfully created invoice item",success:true,status:"Success"})
     }
 else{

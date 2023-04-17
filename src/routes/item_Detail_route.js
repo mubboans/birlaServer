@@ -1,5 +1,5 @@
 const express = require('express');
-const {getAllItem, createInvoiceItem, updateItembyId, deleteInvoiceItem} = require('../controller/invoice_item_controller');
+const {getAllItem, createInvoiceItem, updateItembyId, deleteInvoiceItem} = require('../controller/item_Detail_controller');
 const route = express.Router();
 
 route.post('/item/create',createInvoiceItem);
