@@ -10,10 +10,14 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
+      // invoiceItems.belongsTo(models.invoice,{foreignKey:'id'})
+      invoiceItems.belongsTo(models.invoice,{foreignKey:'invoice_id'})
       // define association here
     }
   }
   invoiceItems.init({
+    invoice_id:DataTypes.INTEGER,
+    item_id:DataTypes.INTEGER,
     quantity: DataTypes.INTEGER
   }, {
     sequelize,

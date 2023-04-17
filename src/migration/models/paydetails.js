@@ -2,6 +2,7 @@
 const {
   Model
 } = require('sequelize');
+const invoice = require('./invoice');
 module.exports = (sequelize, DataTypes) => {
   class payDetails extends Model {
     /**
@@ -10,11 +11,13 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
+      payDetails.hasMany(models.invoice,{foreignKey:'payment_id',as:'payDetails'})
       // define association here
     }
   }
   payDetails.init({
     invoice_no:DataTypes.INTEGER,
+    customer_id:DataTypes.INTEGER,
     cf_link_id:DataTypes.STRING,
     link_id: DataTypes.STRING,
     link_id: DataTypes.STRING,

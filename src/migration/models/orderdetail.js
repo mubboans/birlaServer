@@ -10,16 +10,20 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
+      orderDetail.hasMany(models.invoice,{foreignKey:'order_id'})
       // define association here
     }
   }
   orderDetail.init({
+    customer_id:DataTypes.INTEGER,
+    cf_order_id: DataTypes.INTEGER,
+    entity: DataTypes.STRING,
     transactionId: DataTypes.STRING,
     settlements_url: DataTypes.STRING,
     refunds_url: DataTypes.STRING,
     payments_url: DataTypes.STRING,
     payment_session_id: DataTypes.STRING,
-    order_tags: DataTypes.STRING,
+    
     order_status: DataTypes.STRING,
     order_id: DataTypes.STRING,
     order_expiry_time: DataTypes.STRING,

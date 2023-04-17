@@ -1,8 +1,8 @@
 'use strict';
-
+const {invoice,payDetails,User} = require('../models')
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
-  async up (queryInterface, Sequelize) {
+  async up (queryInterface, Sequelize,sequelize) {
     return Promise.all([
       // queryInterface.changeColumn('invoices', 'invoiceno', {
       //   type: Sequelize.INTEGER,
@@ -10,6 +10,8 @@ module.exports = {
       //   unique:true
       
       // }),
+      // const tabName = se
+    //  invoice.hasOne(User),
       await queryInterface.addConstraint('invoices', {
         fields: ['id', 'invoiceno'],
         type: 'unique',

@@ -2,18 +2,22 @@
 const {
   Model
 } = require('sequelize');
+
+// const payDetails =require('../models')['payDetails']
 module.exports = (sequelize, DataTypes) => {
   class invoice extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+
     static associate(models) {
-      // define association here
+      invoice.belongsTo(models.User,{foreignKey:'customer_id',as:'Users'});
+      invoice.belongsTo(models.payDetails,{foreignKey:'payment_id'});
+      invoice.hasMany(models.invoiceItems,{foreignKey:'invoice_id'})
+      invoice.belongsTo(models.orderDetail, { foreignKey: 'id' });
     }
   }
   invoice.init({
+    customer_id: DataTypes.INTEGER,
+    payment_id: DataTypes.INTEGER,
+    order_id: DataTypes.INTEGER,
     invoiceno: DataTypes.INTEGER,
     invoicedate: DataTypes.DATE,
     paymentType: DataTypes.INTEGER,
