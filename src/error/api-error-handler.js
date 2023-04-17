@@ -5,7 +5,8 @@ if(err instanceof apiError){
     let data = {
         message :err.message,
         success:err.success,
-        error:err.error
+        error:err.error,
+        status:err.status
     }
     res.status(err.code).send(data)
 }

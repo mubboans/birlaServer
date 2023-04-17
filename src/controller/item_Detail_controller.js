@@ -25,9 +25,9 @@ const deleteInvoiceItem =async (req,res,next)=>{
 const getAllItem =async (req,res,next)=>{
     try{
         console.log('get item called');
-        let Item = await invoiceItem.findAll()
+        let Item = await invoiceItem.findAll({order: [['createdAt', 'DESC']]})
         if(Item){
-            res.status(200).send({message:'data found',Item})
+            res.status(200).send({message:"Invoice item get succesfully",success:true,status:"Success",data:Item})
         }
         }
     catch(err){

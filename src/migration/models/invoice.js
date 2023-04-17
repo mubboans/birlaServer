@@ -10,8 +10,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       invoice.belongsTo(models.User,{foreignKey:'customer_id',as:'Users'});
       invoice.belongsTo(models.payDetails,{foreignKey:'payment_id'});
+      invoice.belongsTo(models.orderDetail, { foreignKey: 'order_id' });
       invoice.hasMany(models.invoiceItems,{foreignKey:'invoice_id'})
-      invoice.belongsTo(models.orderDetail, { foreignKey: 'id' });
     }
   }
   invoice.init({
