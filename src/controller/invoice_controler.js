@@ -5,18 +5,20 @@ const itemDetails = require('../migration/models/index')['itemDetail']
 const invoiceModel = require('../migration/models/index')['invoice']
 const payDetails = require('../migration/models/index')['payDetails']
 const Users = require('../migration/models/index')['Users']
-const { User,orderDetail,invoiceItems } = require('../migration/models');
+const { User,orderDetail,invoiceItems,invoicePayementMethod } = require('../migration/models');
 const { Op } = require('sequelize');
 const sdk = require('api')('@cashfreedocs-new/v3#246q2ilfwcazf0');
 const axios = require('axios');
-const fs = require('fs');
+const fs = require('fs')
+const path = require('path')
+const ejs = require('ejs');
 const pdf = require ('html-pdf')
 const createPdf = ()=>{
-
 }
 
 const createInvoice = asyncHandler(async (req, res,next) => {
     let data = req.body;
+    console.log(data,'req.body');
     var randomnum = Math.floor(Math.random() * (10000 - 2123)) + 10000;
     let totalAmount = 0;
     const quantity = data.item.map(x => x.quantity)
@@ -29,10 +31,12 @@ const createInvoice = asyncHandler(async (req, res,next) => {
             }
         }
     })
+    console.log(invoiceitemdetailed,'invoice item');
     for (let i = 0; i < invoiceitemdetailed.length; i++) {
         totalAmount += invoiceitemdetailed[i].itemprice * quantity[i]
         console.log(totalAmount, 'calculated Amount', i);
     }
+    
     let invoicedata = {
         customer_id: data.cust_id,
         invoiceno: data.invoiceno,
@@ -98,7 +102,11 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                       console.log(err);
                          })
                     if (invoice) {
-                        res.status(201).send({ message:"SuccessFull create invoice",success:true,status:"Success"})
+                        res.status(201).send({paymentType:1,
+                            link: paymentlink.data.link_url,
+                            expireIn: paymentlink.data.link_expiry_time,
+                            message:"SuccessFull create invoice",
+                            success:true,status:"Success"})
                     }                  
                 }
                 catch (err) {
@@ -167,16 +175,30 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                 let invoices = await invoiceModel.create(invoicedata); 
                 let invoice_id = invoices.id
                 let detailinvoiceItem = data.item.map(item=>({invoice_id,...item}));
-                console.log('data to be inserted',detailinvoiceItem,'detail insert 163');
+                let payemenyMethodType = data.methodtype.map((x)=>({invoice_id:invoice_id,type:x}))
+                
+                console.log('data to be inserted',detailinvoiceItem,payemenyMethodType,'detail insert 163');
+
+
+                invoicePayementMethod.bulkCreate(payemenyMethodType).then((data)=>{
+                    console.log('183 payment insert');
+                }).catch((err)=>{
+                    console.log(err)
+                })
+                
                 invoiceItems.bulkCreate(detailinvoiceItem)
                 .then((data)=>{
-                console.log('bulk inserted');
+                console.log('bulk inserted 190');
                }).catch((err)=>{
                 console.log(err);
                })
                 if(invoices){
                     console.log('inserted');
-                    res.status(201).send({ message:"SuccessFull create invoice",success:true,status:"Success"})
+                    res.status(201).send({paymentType:2,
+                        message:"SuccessFull create invoice",
+                        success:true,
+                        payment_session_id:d.payment_session_id,
+                        status:"Success"})
                 }
             }
             catch(err){
@@ -191,9 +213,85 @@ const createInvoice = asyncHandler(async (req, res,next) => {
 }
 )
 
+const createInvoicePdf=async(req,res,next)=>{
+    console.log('get called');
+    let no = req.params.no;
+    let data = await invoiceModel.findOne({include: [
+        {
+          model: User,
+          as:'Users'
+        },{
+            model:payDetails
+        },{
+            model:orderDetail
+        },{
+            model:invoiceItems,
+             include: [
+                { model: itemDetails,
+                as:'items' },
+              ],
+        }
+        ,{
+            model:invoicePayementMethod
+        }
+      ],where:{ invoiceno: no} })
+      
+      const detailed = {
+        id:data.id,
+        name: data.Users.firstName,
+        email: data.Users.email,
+        contact: data.Users.contact,
+        address: data.Users.addressLine1,
+        address2:data.Users.addressLine2,
+        pincode: data.Users.pincode,
+        city:data.Users.city,
+        state:data.Users.state,
+        country:data.Users.country,
+        items: data.invoiceItems,
+        inno: data.invoiceno,
+        amount: data.totalamount,
+        indate: data.invoicedate,
+        itemlength: data.invoiceItems.length,
+        createddate: data.createdAt
+    }
+    let option={format:"Letter"}
+    const filePath = __filename;
+    const dirPath = path.dirname(filePath);
+    const pdfdir = path.join(dirPath, '..', 'pdf')
+    const viewFilePath = path.join(dirPath, '..', 'views', 'invoices.ejs');
+    
+    const itemdet = data.invoiceItems
+    // res.send(itemdet.items)
+    console.log(itemdet,'itemdetail',detailed);
+
+    const html = await ejs.renderFile(viewFilePath,{ detail: detailed, allitem: detailed.items });
+    // console.log('file path',viewFilePath);
+
+    pdf.create(html,option).toFile(`${pdfdir}/data_${data.invoiceno}.pdf`,(err,succ)=>{
+        if(err) {
+            return console.log(err,'error occures');
+        }
+        else{
+            const viewFilePath = path.join(dirPath, '..', 'pdf',`data_${data.invoiceno}.pdf`);
+            fs.readFile(viewFilePath, (err, dataobj) => {
+                if (err) {
+                  console.error(err);
+                  next(apiError.BadRequest("Can't generate pdf",err))
+                  return;
+                } 
+            else{
+                res.setHeader('Content-Type', 'application/pdf'),
+                res.setHeader('Content-Disposition', `attachment; filename="data_${data.invoiceno}.pdf"`);
+                res.send(dataobj);
+            }
+            }
+            )
+            console.log(succ,'succss');
+        }
+    })
+}
 const updateInvoice = asyncHandler(async(req,res,next)=>{
     let id =req.query.id;
-    let invyno =req.query.no;
     let data = req.body
     let totalAmount = 0;
     const quantity = data.item.map(x => x.quantity)
@@ -209,7 +307,7 @@ const updateInvoice = asyncHandler(async(req,res,next)=>{
     for (let i = 0; i < invoiceitemdetailed.length; i++) {
         totalAmount += invoiceitemdetailed[i].itemprice * quantity[i]
     }
-console.log(id,invyno,data);
+console.log(id,data);
     let updateItem = {
         customer_id:data.customer_id,
         invoicedate:data.invoicedate,
@@ -226,10 +324,7 @@ console.log(id,invyno,data);
         let invoice_id = id
         // for(let i=0;i<items.length;i++){
             let updateItem = data.item.map((item)=>({invoice_id,...item}))
-            // {
-            //     item_id:items[i].item_id,
-            //     quantity:quantity[i]
-            // }
+                
             console.log(updateItem,'posting data');
            await invoiceItems.bulkCreate(updateItem).then((item)=>{
             console.log('inserted succ',item);
@@ -238,13 +333,6 @@ console.log(id,invyno,data);
            })
             console.log('updatesd Item');
             
-        // }
-        // invoiceItems.bulkCreate(items,{updateOnDuplicate:['item_id','quantity']}).then((data)=>{
-        //     console.log('bulk updated');
-        // }).catch((err)=>{
-        //     console.log(err);
-        // })
-        
             res.status(200).send({message:"Invoice Update Succesfully",success:true,status:"Success"})
         
         console.log('0 working ');
@@ -257,14 +345,20 @@ console.log(id,invyno,data);
 
 const deleteInvoice = async(req,res,next)=>{
 const id =req.params.ids
-let isInvoiceDeleted = await invoiceModel.destroy({where:{id:id}})
-if(isInvoiceDeleted == 1){
-    res.status(200).send({message:"Succesfully Deleted invoice",success:true,status:"Success"})
+try{
+    let itemDestroy = await invoiceItems.destroy({where:{invoice_id:id}})
+    let methodtypeDestroy = await invoicePayementMethod.destroy({where:{invoice_id:id}})
+    let isInvoiceDeleted = await invoiceModel.destroy({where:{id:id}})
+    if(isInvoiceDeleted == 1){
+        res.status(200).send({message:"Succesfully Deleted invoice",success:true,status:"Success"})
+    }
 }
-else{
-    next(apiError.BadRequest("Can't Delete Invoice"))
+catch(e){
+    next(apiError.BadRequest("Can't Delete Invoice",e))
 }
 }
+
+
 const getAllInvoice = asyncHandler(async (req, res, next) => {
     let invoice = await invoiceModel.findAll({include: [
         {
@@ -275,11 +369,18 @@ const getAllInvoice = asyncHandler(async (req, res, next) => {
         },{
             model:orderDetail
         },{
-            model:invoiceItems
+            model:invoiceItems,
+            include: [
+                { model: itemDetails,as:'items' },
+              ],
+        }
+        ,{
+            model:invoicePayementMethod
         }
       ],order: [['createdAt', 'DESC']]});
     if (invoice) {
-        res.status(200).send({ invoice })
+        // res.status(200).send({message invoice })
+        res.status(200).send({message:"Succesfully get invoice",success:true,status:"Success",data:invoice})
     }
     else {
         next(apiError.BadRequest("can't find invoice"))
@@ -288,6 +389,9 @@ const getAllInvoice = asyncHandler(async (req, res, next) => {
 )
 const bulkdeleteInvoice =async(req,res,next)=>{
     let ids = req.body.ids;
+    if(ids.length > 3){
+        next(apiError.BadRequest("Invoice length should be less than 3"))
+    }
   try{
 
       let bulinvoicedeleted = await invoiceModel.destroy({where:{ id: { [Op.in]: ids }}})
@@ -305,5 +409,5 @@ const bulkdeleteInvoice =async(req,res,next)=>{
 }
 module.exports = {
     createInvoice,
-    getAllInvoice,updateInvoice,deleteInvoice,bulkdeleteInvoice
+    getAllInvoice,updateInvoice,deleteInvoice,bulkdeleteInvoice,createInvoicePdf
 }

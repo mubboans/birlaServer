@@ -6,9 +6,10 @@ const path =require('path')
 const connectDB = require('./dbconfig/dbonfig')
 const invoiceroute = require ('./routes/invoice_route')
 const {port}  = require('./config/config')
+app.set('views', path.join(__dirname, './views'));
+app.set('view engine', 'ejs');
 const cors = require('cors');
 const apiErrorHandler = require('./error/api-error-handler')
-
 const itemroute = require('./routes/item_Detail_route')
 app.get('/data', (req, res) => {
   res.send('Hello World!')
