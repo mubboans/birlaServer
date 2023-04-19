@@ -22,7 +22,6 @@
     "html-pdf": "^3.0.1",
     "sequelize": "^6.30.0",
     "sequelize-cli": "^6.6.0",
-    "sequelize-msnodesqlv8": "^0.2.6-beta.8",
     "sqlite3": "^5.1.6",
     "tedious": "^15.1.3"
   },
