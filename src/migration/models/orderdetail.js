@@ -23,12 +23,12 @@ module.exports = (sequelize, DataTypes) => {
     refunds_url: DataTypes.STRING,
     payments_url: DataTypes.STRING,
     payment_session_id: DataTypes.STRING,
-    
     order_status: DataTypes.STRING,
     order_id: DataTypes.STRING,
     order_expiry_time: DataTypes.STRING,
     order_currency: DataTypes.STRING,
-    order_amount: DataTypes.NUMBER
+    order_amount: DataTypes.NUMBER,
+    link_amount_paid:DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'orderDetail',

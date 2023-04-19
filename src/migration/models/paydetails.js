@@ -27,6 +27,7 @@ module.exports = (sequelize, DataTypes) => {
     link_purpose: DataTypes.STRING,
     link_url:DataTypes.STRING,
     link_expiry_time: DataTypes.STRING,
+    link_amount_paid:DataTypes.INTEGER
   }, {
     sequelize,
     modelName: 'payDetails',
