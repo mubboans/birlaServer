@@ -3,6 +3,7 @@ const {hostname,dbusername,dbpassword,dbname } = require('../config/config')
 const sequelize = new Sequelize( dbname , dbusername, dbpassword, { 
   dialect: 'mssql',
   host: hostname,
+  port: 3307,
   // logging:false
 }
   )
