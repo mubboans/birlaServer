@@ -11,7 +11,9 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      payDetails.hasMany(models.invoice,{foreignKey:'payment_id',as:'payDetails'})
+      payDetails.hasMany(models.invoice,{foreignKey:'payment_id',as:'payDetails'});
+
+      payDetails.hasMany(models.partialPaymentDetail,{foreignKey:'payment_id'});
       // define association here
     }
   }
@@ -24,6 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     link_status: DataTypes.STRING,
     link_currency: DataTypes.STRING,
     link_amount: DataTypes.INTEGER,
+    link_partial_payments:DataTypes.BOOLEAN,
+    link_partial_amount:DataTypes.INTEGER,
     link_purpose: DataTypes.STRING,
     link_url:DataTypes.STRING,
     link_expiry_time: DataTypes.STRING,

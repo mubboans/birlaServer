@@ -11,7 +11,7 @@ class apiError {
         return new apiError (400,mssg,false,error,'Failed')
     }
 
-    static InternalServerError(mssg){
+    static InternalServerError(mssg,error){
         return new apiError(500,mssg,false,error,'Failed')
     }
 

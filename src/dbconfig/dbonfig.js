@@ -3,8 +3,7 @@ const {hostname,dbusername,dbpassword,dbname } = require('../config/config')
 const sequelize = new Sequelize( dbname , dbusername, dbpassword, { 
   dialect: 'mssql',
   host: hostname,
-  port: 1433,
-  logging:false
+  logging:true
 }
   )
 function connectDB(){

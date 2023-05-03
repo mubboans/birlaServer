@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const app = express()
 const path =require('path')
 const connectDB = require('./dbconfig/dbonfig')
+const webhookRoute = require('./routes/webhook_routes')
 const invoiceroute = require ('./routes/invoice_route')
 const {port}  = require('./config/config')
 app.set('views', path.join(__dirname, './views'));
@@ -19,8 +20,10 @@ app.use(cors({
   origin: '*',
   methods: ['GET','POST','DELETE','UPDATE','PUT','PATCH']
 }));
+
 app.use('/invoice',itemroute);
 app.use('',invoiceroute)
+app.use('/invoice',webhookRoute)
 app.use('/users', require('./routes/users'));
 app.use(apiErrorHandler);
 

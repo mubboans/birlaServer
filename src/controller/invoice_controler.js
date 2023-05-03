@@ -5,7 +5,7 @@ const itemDetails = require('../migration/models/index')['itemDetail']
 const invoiceModel = require('../migration/models/index')['invoice']
 const payDetails = require('../migration/models/index')['payDetails']
 const Users = require('../migration/models/index')['Users']
-const { User,orderDetail,invoiceItems,invoicePayementMethod } = require('../migration/models');
+const { User,orderDetail,invoiceItems,invoicePayementMethod,partialPaymentDetail } = require('../migration/models');
 const { Op } = require('sequelize');
 const sdk = require('api')('@cashfreedocs-new/v3#246q2ilfwcazf0');
 const axios = require('axios');
@@ -13,17 +13,19 @@ const fs = require('fs')
 const path = require('path')
 const ejs = require('ejs');
 const pdf = require ('html-pdf')
+const nodemailer = require("nodemailer");
+const Mailgen = require('mailgen');
 const createPdf = ()=>{
 }
 
 const createInvoice = asyncHandler(async (req, res,next) => {
-    let data = req.body;
-    console.log(data,'req.body');
+    let reqdata = req.body;
+    console.log(reqdata,'req.body');
     var randomnum = Math.floor(Math.random() * (10000 - 2123)) + 10000;
     let totalAmount = 0;
-    const quantity = data.item.map(x => x.quantity)
-    const itemId = data.item.map(x => x.item_id)
-    const userDetail = await User.findOne({ where: { id: data.cust_id } })
+    const quantity = reqdata.item.map(x => x.quantity)
+    const itemId = reqdata.item.map(x => x.item_id)
+    const userDetail = await User.findOne({ where: { id: reqdata.cust_id } })
     const invoiceitemdetailed = await itemDetails.findAll({
         where: {
             id: {
@@ -32,16 +34,89 @@ const createInvoice = asyncHandler(async (req, res,next) => {
         }
     })
     console.log(invoiceitemdetailed,'invoice item');
+    let tabdata=[
+    //     {
+    //     ItemName:String,
+    //     ItemPrice:Number,
+    //     ItemQuantity:Number
+    // }
+]
+    for(let j= 0;j<invoiceitemdetailed.length; j++){
+        let obj={
+            ItemName:invoiceitemdetailed[j].itemname,
+            ItemPrice : invoiceitemdetailed[j].itemprice,
+            ItemQuantity : quantity[j]
+        }
+        tabdata.push(obj);
+    }
     for (let i = 0; i < invoiceitemdetailed.length; i++) {
         totalAmount += invoiceitemdetailed[i].itemprice * quantity[i]
-        console.log(totalAmount, 'calculated Amount', i);
+        // console.log(totalAmount, 'calculated Amount', i);
     }
-    
+    // let testAccount = await nodemailer.createTestAccount();
+    let config ={
+        service:'gmail',
+        auth:{
+            user:'tpsmubashir@gmail.com',
+            pass:'prfvbhbobomzlztc'
+        }
+    }
+    let transporter = nodemailer.createTransport(config);
+    let mailGenerator = new Mailgen({theme:"default",product:{
+        name:'Mailgen',link:'https://mailgen.js/'
+    }});
+    var email = {
+        body: {
+            name: 'Created Invoice Succesfully',
+            intro: 'Your invoice generated.',
+            table:{
+               
+                data:tabdata
+            }, 
+            action: {
+                instructions: `Your Total Amount For invoice is ${totalAmount}`,
+                button: {
+                    color: '#22BC66', // Optional action button color
+                    text: 'Confirm your account',
+                    link: 'https://google.com'
+                }
+            },
+            outro: 'Need help, or have questions? Just reply to this email, we\'d love to help.'
+        }
+    };
+    let mail =mailGenerator.generate(email);
+    let message = {
+        from:'tpsmubashir@gmail.com',
+        to:userDetail.email,
+        subject:"Invoice Created",
+        html:mail
+    }
+    transporter.sendMail(message).then(()=>{
+    console.log(tabdata,'tab data check');
+        console.log('Mail send Succfully 81');
+    }).catch((err)=>{
+        console.log(err,'83');
+    })
+    //   let message = {
+    //     from: 'Sender Name <sender@example.com>',
+    //     to: 'Recipient <recipient@example.com>',
+    //     subject: 'Nodemailer is unicode friendly ✔',
+    //     text: 'Hello to myself!',
+    //     html: '<p><b>Hello</b> to myself!</p>'
+    // };
+
+    //   let info = await transporter.sendMail({
+    //     from: '"Fred Foo 👻" <foo@example.com>', // sender address
+    //     to: "bar@example.com, baz@example.com", // list of receivers
+    //     subject: "Hello ✔", // Subject line
+    //     text: "Hello world?", // plain text body
+    //     html: "<b>Hello world?</b>", // html body
+    //   });
     let invoicedata = {
-        customer_id: data.cust_id,
-        invoiceno: data.invoiceno,
-        invoicedate: data.invoicedate,
-        paymentType: data.paymentType,
+        customer_id: reqdata.cust_id,
+        invoiceno: reqdata.invoiceno,
+        invoicedate: reqdata.invoicedate,
+        paymentType: reqdata.paymentType,
         bill_link_id: randomnum,
         totalamount: totalAmount
     }
@@ -57,20 +132,22 @@ const createInvoice = asyncHandler(async (req, res,next) => {
             customer_name: userDetail.firstName
         },
         link_auto_reminders: true,
-        link_notify: { send_sms: data.link_notify.send_sms, send_email: data.link_notify.send_email },
+        link_notify: { send_sms: reqdata.link_notify.send_sms, send_email: reqdata.link_notify.send_email },
         link_id: randomnum.toString(),
         link_amount: invoicedata.totalamount,
-        link_currency: data.link_currency,
-        link_purpose: data.link_purpose,
-        // link_partial_payments: data.link_partial_payments,
-        // link_minimum_partial_amount: data.link_minimum_partial_amount,
+        link_currency: reqdata.link_currency,
+        link_purpose: reqdata.link_purpose,
+        link_partial_payments: reqdata.link_partial_payments,
+        link_minimum_partial_amount: reqdata.link_minimum_partial_amount,
     }
     let paydet;
     if (invoicedata.paymentType == 1) {
+        console.log(orderlink,'orderLink check');
         sdk.createPaymentLink(orderlink, headerConfig)
             .then(async data => {
                 paymentlink = data
                 let paymentDetailResponse = paymentlink.data;
+                console.log(paymentDetailResponse,'detail response');
                 let detailpayment = {
                     invoice_no: invoicedata.invoiceno,
                     customer_id: invoicedata.customer_id,
@@ -80,6 +157,7 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                     link_currency: paymentDetailResponse.link_currency,
                     link_amount: paymentDetailResponse.link_amount,
                     link_partial_payments: paymentDetailResponse.link_partial_payments,
+                    link_partial_amount:paymentDetailResponse.link_minimum_partial_amount   ,
                     link_purpose: paymentDetailResponse.link_purpose,
                     link_url: paymentDetailResponse.link_url,
                     link_expiry_time: paymentDetailResponse.link_expiry_time,
@@ -91,11 +169,21 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                 try {
                     paydet = await payDetails.create(detailpayment)
                     invoicedata['payment_id'] = paydet.id;
+                    // if(detailpayment.link_partial_payments == true){
+                    //     let parpaydet={
+                    //         payment_id:paydet.id,
+                    //         amount:0,
+                    //         payment_date:0
+                    //     }
+                    //     let partialPayDe = await partialPaymentDetail.create(parpaydet)
+                    //     console.log(partialPayDe,'partial created');
+                    // }
                     let invoice = await invoiceModel.create(invoicedata);
-                    let invoice_id = invoices.id
-                   let detailinvoiceItem = data.item.map(item=>({invoice_id,...item}));
+                    let invoice_id = invoice.id
+                   let detailinvoiceItem = reqdata.item.map(item=>({invoice_id,...item}));
                       console.log('data to be inserted',detailinvoiceItem,'detail insert 163');
-                    invoiceItems.bulkCreate(detailinvoiceItem)
+                    invoiceItems.
+                    Create(detailinvoiceItem)
                      .then((data)=>{
                      console.log('bulk inserted');
                       }).catch((err)=>{
@@ -110,10 +198,11 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                     }                  
                 }
                 catch (err) {
+                    console.log(err,'err 122');
                     next(apiError.BadRequest("can't create invoice",err))
                 }
             }
-            )
+            ).catch(err=> console.log(err,'Error'))
     }
     else {
         let orderDetailing = {
@@ -124,7 +213,7 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                 "customer_name": userDetail.firstName
             },
             "order_amount": invoicedata.totalamount,
-            "order_currency": data.link_currency
+            "order_currency": reqdata.link_currency
         }
         const options = {
             method: 'POST',
@@ -162,7 +251,7 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                 link_status:d.order_status,
                 link_currency:d.order_currency,
                 link_amount: d.order_amount,
-                link_purpose:data.link_purpose,
+                link_purpose:reqdata.link_purpose,
                 link_url: d.payments.url,
                 link_expiry_time: d.order_expiry_time,
             }
@@ -174,8 +263,8 @@ const createInvoice = asyncHandler(async (req, res,next) => {
                 invoicedata['order_id'] = orderDetailing.id;
                 let invoices = await invoiceModel.create(invoicedata); 
                 let invoice_id = invoices.id
-                let detailinvoiceItem = data.item.map(item=>({invoice_id,...item}));
-                let payemenyMethodType = data.methodtype.map((x)=>({invoice_id:invoice_id,type:x}))
+                let detailinvoiceItem = reqdata.item.map(item=>({invoice_id,...item}));
+                let payemenyMethodType = reqdata.methodtype.map((x)=>({invoice_id:invoice_id,type:x}))
                 
                 console.log('data to be inserted',detailinvoiceItem,payemenyMethodType,'detail insert 163');
 
@@ -338,7 +427,7 @@ console.log(id,data);
         console.log('0 working ');
     }
     else{
-        next(apiError.BadRequest("Can't Update Successfully"))
+        next(apiError.BadRequest("Can't Update Invoice"))
     }
 
 })
